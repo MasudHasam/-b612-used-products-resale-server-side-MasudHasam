@@ -1,5 +1,5 @@
 const express = require('express');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const cors = require('cors');
 const port = process.env.PORT || 5000;
 const app = express();
@@ -23,6 +23,7 @@ async function run() {
         const categoryCollection = client.db('give-and-take').collection('category');
         const productsCollection = client.db('give-and-take').collection('products');
         const usersCollection = client.db('give-and-take').collection('users');
+        const advertiseCollection = client.db('give-and-take').collection('advertise');
 
         //load all category
         app.get('/category', async (req, res) => {
@@ -44,6 +45,36 @@ async function run() {
             const product = req.body;
             const cursor = await productsCollection.insertOne(product);
             res.send(cursor);
+        })
+
+        //prost advertse products
+        app.put('/product/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) }
+            const options = { upsert: true }
+            const updatedDoc = {
+                $set: {
+                    advertise: '1',
+                }
+            }
+            const result = await productsCollection.updateOne(filter, updatedDoc, options)
+            res.send(result);
+        })
+
+        //delete products
+        app.delete('/product/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) }
+            const result = await productsCollection.deleteOne(query);
+            res.send(result);
+        })
+
+        //get product by user seler id
+        app.get('/products/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email };
+            const result = await productsCollection.find(query).toArray();
+            res.send(result);
         })
 
         //post user data to server.
@@ -68,6 +99,17 @@ async function run() {
             const result = await usersCollection.find(query).toArray();
             res.send(result);
         });
+
+
+        //get all advertise items
+        app.get('/advertisedProduct/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email };
+            const results = await productsCollection.find(query).toArray();
+            const filterResult = results.filter(result => result.advertise == '1');
+            res.send(filterResult);
+        })
+
 
     }
     finally {
