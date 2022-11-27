@@ -67,7 +67,7 @@ async function run() {
             const query = { options }
             const result = await usersCollection.find(query).toArray();
             res.send(result);
-        })
+        });
 
     }
     finally {
