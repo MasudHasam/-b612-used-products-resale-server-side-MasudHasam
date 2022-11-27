@@ -22,6 +22,7 @@ async function run() {
     try {
         const categoryCollection = client.db('give-and-take').collection('category');
         const productsCollection = client.db('give-and-take').collection('products');
+        const usersCollection = client.db('give-and-take').collection('users');
 
         //load all category
         app.get('/category', async (req, res) => {
@@ -43,6 +44,22 @@ async function run() {
             const product = req.body;
             const cursor = await productsCollection.insertOne(product);
             res.send(cursor);
+        })
+
+        //post user data to server.
+        app.post('/users', async (req, res) => {
+            const user = req.body;
+            const result = await usersCollection.insertOne(user);
+            res.send(result);
+        })
+
+        //get all user
+        app.get('/user/:email', async (req, res) => {
+            const email = req.params.email;
+            console.log(email);
+            const query = { email };
+            const result = await usersCollection.findOne(query);
+            res.send(result);
         })
 
     }
