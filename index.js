@@ -53,12 +53,19 @@ async function run() {
             res.send(result);
         })
 
-        //get all user
+        //get spesific user
         app.get('/user/:email', async (req, res) => {
             const email = req.params.email;
-            console.log(email);
             const query = { email };
             const result = await usersCollection.findOne(query);
+            res.send(result);
+        })
+
+        //get all seller or buyer
+        app.get('/users/:options', async (req, res) => {
+            const options = req.params.options;
+            const query = { options }
+            const result = await usersCollection.find(query).toArray();
             res.send(result);
         })
 
