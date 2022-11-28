@@ -135,7 +135,14 @@ async function run() {
             res.send(result);
         })
 
-
+        //get user booked data
+        app.get('/order/:email', async (req, res) => {
+            const email = req.params.email;
+            console.log(email);
+            const query = { email }
+            const resutl = await ordersCollection.find(query).toArray();
+            res.send(resutl);
+        })
 
 
     }
