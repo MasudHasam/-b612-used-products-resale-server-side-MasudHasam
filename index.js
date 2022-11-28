@@ -23,7 +23,7 @@ async function run() {
         const categoryCollection = client.db('give-and-take').collection('category');
         const productsCollection = client.db('give-and-take').collection('products');
         const usersCollection = client.db('give-and-take').collection('users');
-        const advertiseCollection = client.db('give-and-take').collection('advertise');
+        const ordersCollection = client.db('give-and-take').collection('orders');
 
         //load all category
         app.get('/category', async (req, res) => {
@@ -116,6 +116,23 @@ async function run() {
             const results = await productsCollection.find(query).toArray();
             const filterResult = results.filter(result => result.advertise == '1');
             res.send(filterResult);
+        })
+
+        //save orders in database
+        app.post('/order', async (req, res) => {
+            const orderInfo = req.body;
+            const query = {
+                email: orderInfo.email,
+                itemPrice: orderInfo.itemPrice,
+                itemName: orderInfo.itemName
+            }
+            // console.log(query);
+            const alreadyBooked = await ordersCollection.find(query).toArray();
+            if (alreadyBooked.length) {
+                return res.send({ acknowledged: false })
+            }
+            const result = await ordersCollection.insertOne(orderInfo);
+            res.send(result);
         })
 
 
