@@ -138,10 +138,41 @@ async function run() {
         //get user booked data
         app.get('/order/:email', async (req, res) => {
             const email = req.params.email;
-            console.log(email);
             const query = { email }
             const resutl = await ordersCollection.find(query).toArray();
             res.send(resutl);
+        })
+
+
+        //update reported item
+        app.put('/products/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) }
+            const options = { upsert: true }
+            const updatedDoc = {
+                $set: {
+                    reportedItem: '1',
+                }
+            }
+            const result = await productsCollection.updateOne(filter, updatedDoc, options)
+            res.send(result);
+        })
+
+
+        //get reported items from product cullection;
+        app.get('/reportedItems', async (req, res) => {
+            const query = {};
+            const allresult = await productsCollection.find(query).toArray();
+            const results = allresult.filter(result => result.reportedItem === '1');
+            res.send(results);
+        })
+
+        //delete reported item
+        app.delete('/reportedItems/:id', async (req, res) => {
+            const id = req.params.id;
+            const querry = { _id: ObjectId(id) };
+            const result = await productsCollection.deleteOne(querry);
+            res.send(result);
         })
 
 
