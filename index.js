@@ -4,12 +4,27 @@ const cors = require('cors');
 const port = process.env.PORT || 5000;
 const app = express();
 require('dotenv').config();
+var jwt = require('jsonwebtoken');
 
 
 //middleware
 app.use(cors());
 app.use(express.json());
+function verifyJwt(req, res, next) {
+    const authorizationToken = (req.headers.authorization);
+    if (!authorizationToken) {
+        res.status(401).send('unauthorized token');
+    }
+    const token = authorizationToken.split(' ')[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN, function (err, decoded) {
+        if (err) {
+            res.status(401).send({ massage: 'forbiden access' })
+        }
 
+        req.decoded = decoded;
+        next();
+    })
+}
 
 
 
@@ -101,7 +116,7 @@ async function run() {
         })
 
         //get all seller or buyer
-        app.get('/users/:options', async (req, res) => {
+        app.get('/users/:options', verifyJwt, async (req, res) => {
             const options = req.params.options;
             const query = { options }
             const result = await usersCollection.find(query).toArray();
@@ -112,6 +127,10 @@ async function run() {
         //get all advertise items
         app.get('/advertisedProduct/:email', async (req, res) => {
             const email = req.params.email;
+            // const decodedMail = req.decoded.email;
+            // if (email !== decodedMail) {
+            //     return res.status(403).send({ massage: 'forbiden access' })
+            // }
             const query = { email };
             const results = await productsCollection.find(query).toArray();
             const filterResult = results.filter(result => result.advertise == '1');
@@ -136,8 +155,12 @@ async function run() {
         })
 
         //get user booked data
-        app.get('/order/:email', async (req, res) => {
+        app.get('/order/:email', verifyJwt, async (req, res) => {
             const email = req.params.email;
+            const decodedMail = req.decoded.email;
+            if (email !== decodedMail) {
+                return res.status(403).send({ massage: 'forbiden access' })
+            }
             const query = { email }
             const resutl = await ordersCollection.find(query).toArray();
             res.send(resutl);
@@ -174,6 +197,37 @@ async function run() {
             const result = await productsCollection.deleteOne(querry);
             res.send(result);
         })
+
+
+        //get jwt token
+        //setup jwt
+        app.get('/jwt', async (req, res) => {
+            const email = req.query?.email;
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+            console.log(email);
+            // console.log(user);
+            if (user) {
+                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '7d' })
+                return res.send({ accessToken: token })
+            }
+            res.status(403).send({ accessToken: '' })
+        })
+
+        //update seller status
+        app.put('/seller/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) }
+            const options = { upsert: true }
+            const updatedDoc = {
+                $set: {
+                    status: 'Verified',
+                }
+            }
+            const result = await usersCollection.updateOne(filter, updatedDoc, options)
+            res.send(result);
+        })
+
 
 
     }
